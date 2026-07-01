@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fund Overlap & Returns</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1c1d33;--ink-soft:#4a4c66;--paper:#f7f6f2;--panel:#fff;
+  --line:#e6e3da;--line-strong:#d4d0c4;--accent:#5145e5;--accent-soft:#eceaff;
+  --good:#1b9e8a;--warn:#c98a1a;--bad:#d9544d;
+  --shadow:0 1px 2px rgba(28,29,51,.04),0 8px 24px rgba(28,29,51,.06);--r:14px;
+}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+.wrap{max-width:1120px;margin:0 auto;padding:0 22px}
+header{padding:28px 0 0;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:14px}
+h1{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:26px;letter-spacing:-.02em;margin:0;line-height:1}
+.sub{color:var(--ink-soft);font-size:13.5px;margin-top:6px;max-width:64ch}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}
+button{font-family:"Space Grotesk",sans-serif;font-weight:500;font-size:13.5px;cursor:pointer;border:1px solid var(--line-strong);background:var(--panel);color:var(--ink);padding:8px 14px;border-radius:9px;transition:.15s ease;display:inline-flex;align-items:center;gap:7px}
+button:hover{border-color:var(--ink);transform:translateY(-1px)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+button.primary:hover{background:#000}
+button.ghost{border-color:transparent;background:transparent;color:var(--ink-soft)}
+button.ghost:hover{color:var(--bad);transform:none}
+.tabs{display:flex;gap:2px;margin-top:18px}
+.tab{font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:14.5px;padding:11px 18px;cursor:pointer;color:var(--ink-soft);border:none;border-bottom:2.5px solid transparent;background:transparent;border-radius:0}
+.tab:hover{color:var(--ink);transform:none;border-color:transparent}
+.tab.on{color:var(--ink);border-bottom-color:var(--accent)}
+section{padding:26px 0;border-bottom:1px solid var(--line)}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin:0 0 4px}
+h2{font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:19px;letter-spacing:-.01em;margin:0 0 16px}
+.h2row{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.h2row h2{margin:0}
+.muted{color:var(--ink-soft);font-size:13.5px}
+.funds{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px}
+.card-top{display:flex;gap:8px;align-items:center}
+.fundname{flex:1;font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:16px;color:var(--ink);border:none;border-bottom:1.5px solid var(--line);background:transparent;padding:4px 2px;border-radius:0}
+.fundname:focus{outline:none;border-bottom-color:var(--accent)}
+.x{flex:none;width:28px;height:28px;padding:0;justify-content:center;border-radius:7px;color:var(--ink-soft)}
+textarea{width:100%;min-height:120px;resize:vertical;font-family:"IBM Plex Mono",monospace;font-size:12.5px;line-height:1.55;border:1px solid var(--line);border-radius:10px;padding:10px 11px;background:#fcfcfb;color:var(--ink)}
+textarea.tx{min-height:96px}
+textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.meta{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-soft)}
+.meta .sum{font-family:"IBM Plex Mono",monospace;font-weight:500}.meta .sum.bad{color:var(--bad)}
+.add-card{border:1.5px dashed var(--line-strong);background:transparent;border-radius:var(--r);min-height:180px;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);font-family:"Space Grotesk",sans-serif;font-weight:500;cursor:pointer;transition:.15s}
+.add-card:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.empty{text-align:center;padding:44px 20px;color:var(--ink-soft)}
+.empty h3{font-family:"Space Grotesk",sans-serif;color:var(--ink);font-size:18px;margin:0 0 6px}
+.seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:9px;overflow:hidden}
+.seg button{border:none;border-radius:0;background:var(--panel);color:var(--ink-soft);padding:7px 13px;transform:none}
+.seg button:hover{transform:none;color:var(--ink)}
+.seg button.on{background:var(--ink);color:#fff}
+.matrix-scroll{overflow-x:auto;margin:0 -4px;padding:4px}
+table.matrix{border-collapse:separate;border-spacing:3px;margin:0 auto}
+table.matrix th{font-family:"Space Grotesk",sans-serif;font-weight:500;font-size:12px;color:var(--ink-soft);padding:6px 8px;max-width:130px;text-align:right}
+table.matrix th.col{text-align:center;vertical-align:bottom;white-space:nowrap}
+table.matrix th.col span{display:inline-block;writing-mode:vertical-rl;transform:rotate(180deg);max-height:120px;overflow:hidden;text-overflow:ellipsis}
+table.matrix th.rowh{text-align:right;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+td.cell{font-family:"IBM Plex Mono",monospace;font-weight:500;font-size:13px;text-align:center;width:62px;height:46px;border-radius:8px;cursor:default;transition:transform .12s,box-shadow .12s;position:relative}
+td.cell.diag{background:#edece8!important;color:#9c9a92!important;font-weight:400}
+td.cell.hi{transform:scale(1.06);box-shadow:0 0 0 2px var(--ink);z-index:2}
+.legend{display:flex;align-items:center;gap:10px;margin-top:16px;font-size:12px;color:var(--ink-soft)}
+.legend .bar{height:10px;width:200px;border-radius:5px;background:linear-gradient(90deg,#eaf5f2,#bfe3d6,#f0d99a,#e29a93,#d9544d)}
+.detail-controls{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+select{font-family:"Space Grotesk",sans-serif;font-size:14px;padding:8px 12px;border:1px solid var(--line-strong);border-radius:9px;background:var(--panel);color:var(--ink);cursor:pointer}
+select:focus{outline:none;border-color:var(--accent)}
+.vs{color:var(--ink-soft);font-family:"IBM Plex Mono",monospace;font-size:12px}
+.stat-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:12px 16px;min-width:118px;box-shadow:var(--shadow)}
+.stat .k{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft)}
+.stat .v{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:22px;color:var(--ink);margin-top:2px}
+.stat .v.accent{color:var(--accent)}.stat .v.pos{color:var(--good)}.stat .v.neg{color:var(--bad)}
+table.data{width:100%;border-collapse:collapse;font-size:14px}
+table.data th{text-align:left;font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:12px;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-soft);padding:9px 12px;border-bottom:1.5px solid var(--line-strong)}
+table.data th.num,table.data td.num{text-align:right;font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+table.data td{padding:9px 12px;border-bottom:1px solid var(--line)}
+table.data tr:hover td{background:#faf9f6}
+table.data tfoot td{font-weight:600;border-top:1.5px solid var(--line-strong);border-bottom:none;background:#faf9f6}
+.pos{color:var(--good)}.neg{color:var(--bad)}
+.bar-cell{position:relative}.bar-cell .fill{position:absolute;left:0;top:0;bottom:0;background:var(--accent-soft);border-radius:0 4px 4px 0;z-index:0}.bar-cell span{position:relative;z-index:1}
+.chip{display:inline-block;font-size:11px;font-family:"IBM Plex Mono",monospace;background:var(--accent-soft);color:var(--accent);padding:2px 7px;border-radius:6px;margin:2px 3px 2px 0}
+.warns{display:flex;flex-direction:column;gap:8px}
+.warn-item{background:#fdf6ec;border:1px solid #f0dcb8;border-radius:10px;padding:11px 14px;font-size:13.5px;color:#7a5a16}
+.warn-item b{color:#5e440f}
+.scheme-row{display:flex;gap:6px;align-items:center}
+.scheme-row input{flex:1;font-family:"IBM Plex Mono",monospace;font-size:12.5px;border:1px solid var(--line);border-radius:8px;padding:7px 9px;background:#fcfcfb;color:var(--ink)}
+.scheme-row input:focus{outline:none;border-color:var(--accent)}
+.find{flex:none;padding:7px 11px;font-size:12.5px}
+.results-list{position:relative}
+.dropdown{position:absolute;z-index:20;left:0;right:0;background:#fff;border:1px solid var(--line-strong);border-radius:10px;box-shadow:var(--shadow);max-height:230px;overflow:auto;margin-top:4px}
+.dropdown div{padding:8px 11px;font-size:12.5px;cursor:pointer;border-bottom:1px solid var(--line)}
+.dropdown div:hover{background:var(--accent-soft)}
+.dropdown .code{font-family:"IBM Plex Mono",monospace;color:var(--ink-soft);font-size:11px}
+.fund-fin{font-size:12.5px;color:var(--ink-soft);display:flex;flex-wrap:wrap;gap:4px 14px;font-family:"IBM Plex Mono",monospace}
+.fund-fin b{color:var(--ink);font-weight:600}
+.navline{font-size:11.5px;color:var(--ink-soft)}
+.navline.err{color:var(--bad)}
+.modeseg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;font-size:12px}
+.modeseg button{border:none;border-radius:0;padding:5px 10px;font-size:12px;background:#fff;color:var(--ink-soft);transform:none}
+.modeseg button.on{background:var(--accent-soft);color:var(--accent)}
+.manual-nav{font-size:12px;color:var(--ink-soft);display:flex;align-items:center;gap:6px}
+.manual-nav input{width:90px;font-family:"IBM Plex Mono",monospace;font-size:12px;border:1px solid var(--line);border-radius:7px;padding:5px 7px;background:#fcfcfb}
+footer{padding:26px 0 50px;color:var(--ink-soft);font-size:12.5px;line-height:1.7}
+footer code{font-family:"IBM Plex Mono",monospace;background:#efeee9;padding:1px 5px;border-radius:4px;font-size:11.5px}
+.hide{display:none!important}
+@media (max-width:560px){h1{font-size:22px}.funds{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.modal-bg{position:fixed;inset:0;background:rgba(28,29,51,.45);display:flex;align-items:flex-start;justify-content:center;padding:36px 14px;z-index:100;overflow:auto}
+.modal{background:#fff;border-radius:16px;max-width:780px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,.28);padding:22px}
+.modal h3{font-family:"Space Grotesk",sans-serif;font-size:18px;margin:0 0 4px}
+.modal .step{margin:14px 0}
+.dropzone{border:1.5px dashed var(--line-strong);border-radius:12px;padding:30px 16px;text-align:center;color:var(--ink-soft);cursor:pointer;line-height:1.6}
+.dropzone:hover,.dropzone.drag{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.map-grid label{font-size:11px;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-soft);display:block;margin-bottom:3px;font-family:"Space Grotesk",sans-serif}
+.map-grid label b{color:var(--bad)}
+.map-grid select{width:100%}
+.preview{overflow:auto;border:1px solid var(--line);border-radius:10px;margin-top:12px;max-height:220px}
+.preview table{border-collapse:collapse;font-size:11.5px;font-family:"IBM Plex Mono",monospace;width:100%}
+.preview th,.preview td{padding:5px 9px;border-bottom:1px solid var(--line);white-space:nowrap;text-align:left}
+.preview th{background:#faf9f6;position:sticky;top:0;color:var(--ink-soft)}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="brand">
+      <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+        <circle cx="16" cy="20" r="12.5" fill="#5145e5" fill-opacity="0.22" stroke="#5145e5" stroke-width="1.5"/>
+        <circle cx="24" cy="20" r="12.5" fill="#d9544d" fill-opacity="0.20" stroke="#d9544d" stroke-width="1.5"/>
+        <path d="M20 10.2a12.5 12.5 0 0 1 0 19.6 12.5 12.5 0 0 1 0-19.6Z" fill="#1c1d33" fill-opacity="0.55"/>
+      </svg>
+      <div><h1>Fund Overlap &amp; Returns</h1></div>
+    </div>
+    <p class="sub">See how much your mutual funds duplicate each other, and track what your actual investments are worth today — live NAVs, absolute return and XIRR. All on your device.</p>
+    <div class="toolbar">
+      <button class="primary" id="addBtn">+ Add fund</button>
+      <button id="sampleBtn">Load sample</button>
+      <button id="importTxBtn">Import file</button>
+      <button id="exportBtn">Export data</button>
+      <button id="importBtn">Restore backup</button>
+      <input type="file" id="importFile" accept="application/json" class="hide">
+      <button class="ghost" id="clearBtn">Clear all</button>
+    </div>
+    <div class="tabs">
+      <button class="tab on" data-v="overlap">Overlap</button>
+      <button class="tab" data-v="returns">Returns</button>
+    </div>
+  </div>
+</header>
+ 
+<div id="view-overlap">
+  <section>
+    <div class="wrap">
+      <p class="eyebrow">Inputs</p>
+      <div class="h2row"><h2>Holdings</h2>
+        <span class="muted">One stock per line: <code>HDFC Bank 8.52</code> — name then weight %.</span></div>
+      <div class="funds" id="ovFunds"></div>
+    </div>
+  </section>
+  <section id="resultsSection">
+    <div class="wrap">
+      <p class="eyebrow">Readout</p>
+      <div class="h2row"><h2>Overlap matrix</h2>
+        <div class="seg" id="metricSeg"><button data-m="pct" class="on">Overlap %</button><button data-m="cnt">Common stocks</button></div></div>
+      <div id="matrixHost"></div>
+    </div>
+  </section>
+  <section id="detailSection">
+    <div class="wrap">
+      <p class="eyebrow">Drill down</p><h2>Compare two funds</h2>
+      <div class="detail-controls"><select id="selA"></select><span class="vs">vs</span><select id="selB"></select></div>
+      <div id="detailHost"></div>
+    </div>
+  </section>
+  <section id="topSection">
+    <div class="wrap"><p class="eyebrow">Concentration</p><h2>Most duplicated holdings</h2><div id="topHost"></div></div>
+  </section>
+  <section id="warnSection">
+    <div class="wrap"><p class="eyebrow">Data quality</p><h2>Possible name mismatches</h2><div id="warnHost"></div></div>
+  </section>
+</div>
+ 
+<div id="view-returns" class="hide">
+  <section id="portfolioSection">
+    <div class="wrap">
+      <p class="eyebrow">Portfolio</p>
+      <div class="h2row"><h2>What it's worth today</h2><button id="refreshBtn">↻ Refresh NAVs</button></div>
+      <div id="portfolioHost"></div>
+    </div>
+  </section>
+  <section>
+    <div class="wrap">
+      <p class="eyebrow">Your investments</p>
+      <div class="h2row"><h2>Funds &amp; history</h2>
+        <span class="muted">Map each fund to its AMFI scheme code, then paste transactions: <code>2023-04-15, 10000</code> (date, amount ₹).</span></div>
+      <div class="funds" id="retFunds"></div>
+    </div>
+  </section>
+</div>
+ 
+<footer>
+  <div class="wrap">
+    <p><b>Overlap.</b> Overlap % = Σ min(weight in A, weight in B) across shared stocks — the slice of two portfolios that's identical exposure. Names are normalized for matching (Ltd = Limited); near-matches are flagged, never auto-merged.</p>
+    <p><b>Returns.</b> Live NAVs come from the free <code>api.mfapi.in</code> service, called straight from your browser. Units are derived from each transaction's amount and the NAV on that date; XIRR annualizes the whole cashflow stream. If your network blocks the API, set the current NAV manually on any fund and it still computes. <b>NAV/units are estimates for tracking — your CAS statement is the record of truth.</b> Importing a Detailed CAS reads every transaction directly; dividend reinvestments are counted as buys, which can slightly overstate “invested”.</p>
+    <p><b>Private &amp; free.</b> Nothing leaves your device except the NAV lookups. Auto-saves in this browser; use Export for a backup. Host free: drop this <code>index.html</code> into a GitHub repo → Settings → Pages → deploy from the main branch.</p>
+  </div>
+</footer>
+ 
+<div id="importModal" class="modal-bg hide">
+  <div class="modal">
+    <h3>Import transactions</h3>
+    <p class="muted" id="importHint">Upload a CSV/Excel export, or a <b>Detailed CAS</b> PDF from mfcentral.com (covers Coin, INDmoney &amp; all your funds in one file).</p>
+    <div class="step" id="importStep1">
+      <div class="dropzone" id="dropzone">Tap to choose a <b>.csv</b>, <b>.xlsx</b> or <b>CAS .pdf</b><br><span style="font-size:12px">or drag it here</span></div>
+      <input type="file" id="txFile" accept=".csv,.xlsx,.xls,.pdf" class="hide">
+    </div>
+    <div class="step hide" id="importStep3">
+      <p class="muted">CAS PDFs are password-protected — enter the password (usually your <b>PAN in capitals</b>, or the one you set on MF Central). It's used locally and never sent anywhere.</p>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="password" id="casPwd" placeholder="CAS password" style="font-family:'IBM Plex Mono',monospace;font-size:13px;border:1px solid var(--line-strong);border-radius:9px;padding:8px 11px">
+        <button class="primary" id="casRead">Read statement</button>
+        <span class="navline" id="casStatus"></span>
+      </div>
+      <div id="casPreview" style="margin-top:12px"></div>
+    </div>
+    <div class="step hide" id="importStep2">
+      <p class="muted">Match your file's columns to the fields below — I've guessed; fix any that are wrong. <b>*</b> = required.</p>
+      <div class="map-grid" id="mapGrid"></div>
+      <div class="preview" id="mapPreview"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="ghost" id="importCancel">Cancel</button>
+      <button class="primary hide" id="importConfirm">Import transactions</button>
+    </div>
+  </div>
+</div>
+ 
+<script>
+"use strict";
+const KEY="fundApp.v2";
+const store={load(){try{const r=localStorage.getItem(KEY);return r?JSON.parse(r):null;}catch(e){return null;}},
+  save(d){try{localStorage.setItem(KEY,JSON.stringify(d));}catch(e){}}};
+ 
+let funds=[],uid=1,metric="pct",view="overlap";
+const $=s=>document.querySelector(s);
+ 
+function seed(){const s=store.load();
+  if(s&&Array.isArray(s.funds)&&s.funds.length){funds=s.funds.map(f=>({mode:'amt',...f}));uid=s.uid||funds.length+1;view=s.view||"overlap";}}
+function persist(){
+  const slim=funds.map(f=>({id:f.id,name:f.name,text:f.text,code:f.code,tx:f.tx,mode:f.mode,
+    manualNav:f.manualNav,isin:f.isin,_curNav:f._curNav,_curDate:f._curDate}));
+  store.save({funds:slim,uid,view});}
+ 
+const STOP=new Set(["ltd","ltd.","limited","limited.","plc","inc","inc.","corp","corp.","corporation","co","co.","the","and"]);
+function normalize(n){let s=(n||"").toLowerCase().replace(/&/g," and ").replace(/[^a-z0-9 ]/g," ");
+  return s.split(/\s+/).filter(t=>t&&!STOP.has(t)).join(" ").trim();}
+function parseHoldings(text){const out=[];
+  (text||"").split(/\r?\n/).forEach(raw=>{const line=raw.trim();if(!line)return;
+    let m=line.match(/^(.*?)[\s,;:\t|]+(\d[\d,]*\.?\d*)\s*%?$/);
+    if(!m){const m2=line.match(/^(\d[\d,]*\.?\d*)\s*%?[\s,;:\t|]+(.*\S)$/);if(m2)m=[m2[0],m2[2],m2[1]];}
+    if(!m)return;const name=m[1].trim(),w=parseFloat(String(m[2]).replace(/,/g,""));
+    if(!name||isNaN(w))return;out.push({name,weight:w});});
+  const byKey={};out.forEach(h=>{const k=normalize(h.name);if(!byKey[k])byKey[k]={key:k,name:h.name,weight:0};
+    byKey[k].weight+=h.weight;if(h.name.length>byKey[k].name.length)byKey[k].name=h.name;});
+  return Object.values(byKey);}
+ 
+function build(){const parsed=funds.map(f=>({id:f.id,name:f.name||"Untitled",rows:parseHoldings(f.text)}));
+  const reg={};parsed.forEach(f=>{f.weights={};f.sum=0;f.rows.forEach(r=>{f.weights[r.key]=r.weight;f.sum+=r.weight;
+    if(!reg[r.key])reg[r.key]={key:r.key,display:r.name,funds:{}};reg[r.key].funds[f.id]=r.weight;
+    if(r.name.length>reg[r.key].display.length)reg[r.key].display=r.name;});});return {parsed,reg};}
+function pairOverlap(a,b){let pct=0,cnt=0,wa=0,wb=0;const shared=[];
+  for(const k in a.weights){const x=a.weights[k],y=b.weights[k]||0;
+    if(y>0){const mn=Math.min(x,y);pct+=mn;cnt++;wa+=x;wb+=y;shared.push({key:k,wa:x,wb:y,min:mn});}}
+  shared.sort((p,q)=>q.min-p.min);return {pct,cnt,wa,wb,shared};}
+function bigrams(s){const t=s.replace(/\s+/g,"");const g=new Set();for(let i=0;i<t.length-1;i++)g.add(t.slice(i,i+2));return g;}
+function dice(a,b){const A=bigrams(a),B=bigrams(b);if(!A.size||!B.size)return 0;let n=0;A.forEach(x=>{if(B.has(x))n++;});return 2*n/(A.size+B.size);}
+function findNameWarnings(reg){const keys=Object.keys(reg),w=[];
+  for(let i=0;i<keys.length;i++)for(let j=i+1;j<keys.length;j++){const s=dice(keys[i],keys[j]);
+    if(s>=0.82)w.push({a:reg[keys[i]].display,b:reg[keys[j]].display,score:s});}
+  return w.sort((p,q)=>q.score-p.score).slice(0,12);}
+ 
+function lerp(a,b,t){return a+(b-a)*t;}
+function heat(pct){const cp=[[0,[234,245,242]],[15,[191,227,214]],[30,[240,217,154]],[50,[226,154,147]],[70,[217,84,77]]];
+  let p=Math.max(0,Math.min(70,pct));for(let i=0;i<cp.length-1;i++){const[p0,c0]=cp[i],[p1,c1]=cp[i+1];
+    if(p<=p1){const t=(p-p0)/(p1-p0);return[0,1,2].map(k=>Math.round(lerp(c0[k],c1[k],t)));}}return cp[4][1];}
+function textOn(rgb){return(0.299*rgb[0]+0.587*rgb[1]+0.114*rgb[2])>150?"#1c1d33":"#fff";}
+function esc(s){return String(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function short(n){return n.length>22?n.slice(0,21)+"…":n;}
+ 
+function parseDate(s){s=String(s).trim();let m;
+  if(m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/))return Date.UTC(+m[1],+m[2]-1,+m[3],12);
+  if(m=s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/))return Date.UTC(+m[3],+m[2]-1,+m[1],12);
+  return NaN;}
+function navOnDate(hist,ms){if(!hist||!hist.length)return null;if(ms<hist[0].t)return hist[0].nav;
+  let lo=0,hi=hist.length-1,ans=hist[0].nav;while(lo<=hi){const mid=(lo+hi)>>1;
+    if(hist[mid].t<=ms){ans=hist[mid].nav;lo=mid+1;}else hi=mid-1;}return ans;}
+function xirr(cf){if(cf.length<2)return null;cf=cf.slice().sort((a,b)=>a.date-b.date);
+  const d0=cf[0].date,Y=365*86400000;const f=r=>cf.reduce((s,c)=>s+c.amount/Math.pow(1+r,(c.date-d0)/Y),0);
+  let lo=-0.9999,hi=10,flo=f(lo);if(!isFinite(flo))return null;
+  for(let i=0;i<300;i++){const mid=(lo+hi)/2,fm=f(mid);if(Math.abs(fm)<1e-6)return mid;
+    if((flo<0)===(fm<0)){lo=mid;flo=fm;}else hi=mid;}return (lo+hi)/2;}
+function normType(v){return /sell|redee?m|redemption|swp|withdraw|switch.?out/i.test(String(v))?'sell':'buy';}
+function parseTx(text){const out=[];(text||"").split(/\r?\n/).forEach(raw=>{let line=raw.trim();if(!line)return;
+  line=line.replace(/(?<=\d),(?=\d)/g,"");
+  const parts=line.split(/[\s,;\t|]+/).filter(Boolean);if(parts.length<2)return;
+  const dms=parseDate(parts[0]);if(isNaN(dms))return;
+  let type='buy';const nums=[];
+  for(let i=1;i<parts.length;i++){const p=parts[i];
+    if(/^(buy|purchase|sip|invest|sell|redee?m|redemption|swp|switch|withdraw)/i.test(p)){type=normType(p);continue;}
+    const n=parseFloat(p.replace(/[^0-9.\-]/g,""));if(!isNaN(n))nums.push(n);}
+  if(!nums.length)return;
+  let val=nums[0];const nav=nums.length>1?nums[1]:null;
+  if(val<0){type='sell';val=Math.abs(val);}
+  out.push({date:dms,type,val,nav:(nav&&!isNaN(nav))?nav:null});});return out;}
+ 
+function computeFund(f){
+  const txs=parseTx(f.tx);
+  const curNav=(f.manualNav&&!isNaN(parseFloat(f.manualNav)))?parseFloat(f.manualNav):(f._curNav||null);
+  const res={txs:txs.length,units:0,invested:0,redeemed:0,value:null,gain:null,gainPct:null,xirr:null,
+    curNav,curDate:f._curDate,error:null,rows:[]};
+  if(!txs.length)return res;
+  let bad=false;const cf=[];
+  txs.forEach(t=>{let navBuy=t.nav;
+    if(navBuy==null&&f._hist)navBuy=navOnDate(f._hist,t.date);
+    if(navBuy==null){bad=true;return;}
+    const amt=(f.mode==='units')?t.val*navBuy:t.val;
+    const u=(f.mode==='units')?t.val:t.val/navBuy;
+    if(t.type==='sell'){res.units-=u;res.redeemed+=amt;cf.push({date:t.date,amount:amt});}
+    else{res.units+=u;res.invested+=amt;cf.push({date:t.date,amount:-amt});}
+    res.rows.push({date:t.date,type:t.type,navBuy,units:u,amount:amt});});
+  if(res.units<0)res.units=0;
+  if(bad&&!f._hist)res.error="Set a scheme code (or add NAV as a 3rd value per line) to value these.";
+  if(curNav!=null&&res.invested>0){
+    res.value=res.units*curNav;
+    res.gain=res.value+res.redeemed-res.invested;
+    res.gainPct=res.invested>0?res.gain/res.invested*100:null;
+    cf.push({date:Date.now(),amount:res.value});const r=xirr(cf);res.xirr=r!=null?r*100:null;
+  }else if(curNav==null&&res.invested>0&&!res.error){
+    res.error="No current NAV yet — refresh, or enter it manually.";}
+  return res;}
+ 
+async function fetchHistory(f){
+  if(!f.code){f._err="no code";return;}
+  f._loading=true;renderRetFunds();
+  try{
+    const r=await fetch("https://api.mfapi.in/mf/"+encodeURIComponent(String(f.code).trim()));
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    const j=await r.json();
+    if(!j.data||!j.data.length)throw new Error("no data");
+    const hist=j.data.map(d=>{const p=d.date.split("-");return {t:Date.UTC(+p[2],+p[1]-1,+p[0],12),nav:parseFloat(d.nav)};})
+      .filter(x=>!isNaN(x.nav)).sort((a,b)=>a.t-b.t);
+    f._hist=hist;f._curNav=hist[hist.length-1].nav;
+    f._curDate=new Date(hist[hist.length-1].t).toISOString().slice(0,10);
+    f._meta=j.meta;f._err=null;
+  }catch(e){f._err="Couldn't reach NAV service ("+e.message+"). Enter current NAV manually below.";}
+  f._loading=false;persist();renderRetFunds();renderPortfolio();}
+async function refreshAll(){await Promise.all(funds.filter(f=>f.code).map(f=>fetchHistory(f)));}
+async function searchScheme(f,q,box){
+  try{const r=await fetch("https://api.mfapi.in/mf/search?q="+encodeURIComponent(q));
+    const j=await r.json();
+    box.innerHTML=j.slice(0,12).map(s=>`<div data-code="${s.schemeCode}">${esc(s.schemeName)}<div class="code">${s.schemeCode}</div></div>`).join("")||`<div>No matches</div>`;
+    box.querySelectorAll("div[data-code]").forEach(d=>d.onclick=()=>{
+      f.code=d.dataset.code;box.innerHTML="";box.classList.add("hide");fetchHistory(f);});
+  }catch(e){box.innerHTML=`<div>Search unavailable — type the scheme code directly.</div>`;}}
+ 
+function renderOvFunds(){const host=$("#ovFunds");host.innerHTML="";
+  funds.forEach(f=>{const rows=parseHoldings(f.text);const sum=rows.reduce((s,r)=>s+r.weight,0);
+    const sb=rows.length&&(sum>115||sum<40);const card=document.createElement("div");card.className="card";
+    card.innerHTML=`<div class="card-top">
+      <input class="fundname" value="${esc(f.name)}" placeholder="Fund name" data-id="${f.id}" data-k="name">
+      <button class="x" title="Remove fund" data-id="${f.id}" data-k="del">✕</button></div>
+      <textarea data-id="${f.id}" data-k="text" placeholder="Reliance Industries 9.1&#10;HDFC Bank 8.4 ...">${esc(f.text)}</textarea>
+      <div class="meta"><span>${rows.length} holding${rows.length===1?"":"s"}</span>
+      <span class="sum ${sb?"bad":""}">Σ ${sum.toFixed(1)}%</span></div>`;
+    host.appendChild(card);});
+  const add=document.createElement("div");add.className="add-card";add.textContent="+ Add fund";add.onclick=addFund;host.appendChild(add);}
+function renderMatrix(model){const host=$("#matrixHost");const F=model.parsed.filter(f=>f.rows.length);
+  if(F.length<2){host.innerHTML=`<div class="empty"><h3>Add at least two funds with holdings</h3><p>The matrix lights up once two funds have stocks to compare.</p></div>`;return;}
+  const val={};for(let i=0;i<F.length;i++)for(let j=0;j<F.length;j++){
+    if(i===j){val[i+"-"+j]={pct:F[i].sum,cnt:F[i].rows.length,diag:true};continue;}
+    const o=pairOverlap(F[i],F[j]);val[i+"-"+j]={pct:o.pct,cnt:o.cnt};}
+  let h=`<div class="matrix-scroll"><table class="matrix"><tr><th></th>`;
+  F.forEach(f=>h+=`<th class="col"><span title="${esc(f.name)}">${esc(f.name)}</span></th>`);h+=`</tr>`;
+  F.forEach((fr,i)=>{h+=`<tr><th class="rowh" title="${esc(fr.name)}">${esc(fr.name)}</th>`;
+    F.forEach((fc,j)=>{const v=val[i+"-"+j];const num=metric==="pct"?v.pct:v.cnt;
+      if(v.diag){h+=`<td class="cell diag" data-i="${i}" data-j="${j}">${metric==="pct"?num.toFixed(0):num}</td>`;}
+      else{const rgb=heat(v.pct),bg=`rgb(${rgb[0]},${rgb[1]},${rgb[2]})`,disp=metric==="pct"?num.toFixed(1):num;
+        h+=`<td class="cell" data-i="${i}" data-j="${j}" title="${esc(fr.name)} ∩ ${esc(fc.name)}&#10;${v.pct.toFixed(1)}% overlap · ${v.cnt} common" style="background:${bg};color:${textOn(rgb)}">${disp}</td>`;}});
+    h+=`</tr>`;});
+  h+=`</table></div><div class="legend"><span>Diversified</span><div class="bar"></div><span>Redundant</span><span style="margin-left:auto">Diagonal = each fund's own weight total</span></div>`;
+  host.innerHTML=h;
+  host.querySelectorAll("td.cell").forEach(td=>{
+    td.onmouseenter=()=>{const i=td.dataset.i,j=td.dataset.j;
+      host.querySelectorAll("td.cell").forEach(c=>{if(c.dataset.i===i||c.dataset.j===j)c.classList.add("hi");});};
+    td.onmouseleave=()=>host.querySelectorAll("td.cell.hi").forEach(c=>c.classList.remove("hi"));});}
+function fillSelectors(model){const F=model.parsed.filter(f=>f.rows.length);const a=$("#selA"),b=$("#selB");
+  const pa=a.value,pb=b.value;const opts=F.map(f=>`<option value="${f.id}">${esc(f.name)}</option>`).join("");
+  a.innerHTML=opts;b.innerHTML=opts;if(F.length){a.value=F.some(f=>String(f.id)===pa)?pa:F[0].id;
+    b.value=F.some(f=>String(f.id)===pb)?pb:(F[1]?F[1].id:F[0].id);}}
+function renderDetail(model){const host=$("#detailHost");const F=model.parsed.filter(f=>f.rows.length);
+  if(F.length<2){host.innerHTML=`<p class="muted">Add two funds to compare their shared holdings.</p>`;return;}
+  const A=F.find(f=>String(f.id)===$("#selA").value)||F[0],B=F.find(f=>String(f.id)===$("#selB").value)||F[1];
+  if(A.id===B.id){host.innerHTML=`<p class="muted">Pick two different funds.</p>`;return;}
+  const o=pairOverlap(A,B),mm=o.shared.length?o.shared[0].min:1;
+  let h=`<div class="stat-row">
+    <div class="stat"><div class="k">Overlap</div><div class="v accent">${o.pct.toFixed(1)}%</div></div>
+    <div class="stat"><div class="k">Common stocks</div><div class="v">${o.cnt}</div></div>
+    <div class="stat"><div class="k">In ${esc(short(A.name))}</div><div class="v">${o.wa.toFixed(1)}%</div></div>
+    <div class="stat"><div class="k">In ${esc(short(B.name))}</div><div class="v">${o.wb.toFixed(1)}%</div></div></div>`;
+  if(!o.shared.length){h+=`<p class="muted">No shared holdings — these two are fully distinct.</p>`;host.innerHTML=h;return;}
+  h+=`<table class="data"><thead><tr><th>Shared stock</th><th class="num">${esc(short(A.name))}</th><th class="num">${esc(short(B.name))}</th><th class="num">Overlap</th></tr></thead><tbody>`;
+  o.shared.forEach(s=>{const pw=(s.min/mm*100).toFixed(1);
+    h+=`<tr><td>${esc(model.reg[s.key].display)}</td><td class="num">${s.wa.toFixed(2)}</td><td class="num">${s.wb.toFixed(2)}</td><td class="num bar-cell"><div class="fill" style="width:${pw}%"></div><span>${s.min.toFixed(2)}</span></td></tr>`;});
+  h+=`</tbody></table>`;host.innerHTML=h;}
+function renderTop(model){const host=$("#topHost");const F=model.parsed.filter(f=>f.rows.length);
+  const idName={};F.forEach(f=>idName[f.id]=f.name);
+  const rows=Object.values(model.reg).map(r=>{const ids=Object.keys(r.funds),ws=ids.map(id=>r.funds[id]);
+    return{display:r.display,n:ids.length,avg:ws.reduce((a,b)=>a+b,0)/ids.length,ids};})
+    .filter(r=>r.n>=2).sort((a,b)=>b.n-a.n||b.avg-a.avg).slice(0,15);
+  if(!rows.length){host.innerHTML=`<p class="muted">No stock is held by more than one fund yet.</p>`;return;}
+  let h=`<table class="data"><thead><tr><th>Stock</th><th class="num">Funds</th><th class="num">Avg weight</th><th>Held by</th></tr></thead><tbody>`;
+  rows.forEach(r=>{h+=`<tr><td>${esc(r.display)}</td><td class="num">${r.n}</td><td class="num">${r.avg.toFixed(2)}%</td><td>${r.ids.map(id=>`<span class="chip">${esc(short(idName[id]||"?"))}</span>`).join("")}</td></tr>`;});
+  h+=`</tbody></table>`;host.innerHTML=h;}
+function renderWarn(model){const host=$("#warnHost"),w=findNameWarnings(model.reg);
+  $("#warnSection").classList.toggle("hide",w.length===0);if(!w.length){host.innerHTML="";return;}
+  host.innerHTML=`<div class="warns">`+w.map(x=>`<div class="warn-item">Likely the same stock: <b>${esc(x.a)}</b> and <b>${esc(x.b)}</b>. Counted separately — rename one to merge.</div>`).join("")+`</div>`;}
+ 
+const inr=n=>"₹"+Math.round(n).toLocaleString("en-IN");
+function finLine(c){return `<span>Invested <b>${c.invested?inr(c.invested):"—"}</b></span>`+
+  `<span>Value <b>${c.value!=null?inr(c.value):"—"}</b></span>`+
+  `<span class="${c.gainPct>=0?'pos':'neg'}">Return <b>${c.gainPct!=null?(c.gainPct>=0?'+':'')+c.gainPct.toFixed(1)+'%':"—"}</b></span>`+
+  `<span class="${c.xirr>=0?'pos':'neg'}">XIRR <b>${c.xirr!=null?(c.xirr>=0?'+':'')+c.xirr.toFixed(1)+'%':"—"}</b></span>`;}
+function renderRetFunds(){const host=$("#retFunds");if(!host)return;host.innerHTML="";
+  funds.forEach(f=>{const c=computeFund(f);const card=document.createElement("div");card.className="card";
+    const navTxt=f._loading?"Loading NAV…":(f._err?f._err:(c.curNav!=null?`NAV ₹${c.curNav.toFixed(4)}${c.curDate?" · "+c.curDate:""}`:"No NAV yet"));
+    card.innerHTML=`<div class="card-top">
+        <input class="fundname" value="${esc(f.name)}" placeholder="Fund name" data-id="${f.id}" data-k="name">
+        <button class="x" title="Remove fund" data-id="${f.id}" data-k="del">✕</button></div>
+      <div class="results-list">
+        <div class="scheme-row">
+          <input value="${esc(f.code||"")}" placeholder="AMFI scheme code" data-id="${f.id}" data-k="code" inputmode="numeric">
+          <button class="find" data-id="${f.id}" data-k="find">Find</button>
+        </div><div class="dropdown hide" data-drop="${f.id}"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <div class="modeseg" data-id="${f.id}">
+          <button data-k="mode" data-mode="amt" class="${f.mode!=='units'?'on':''}">Amount ₹</button>
+          <button data-k="mode" data-mode="units" class="${f.mode==='units'?'on':''}">Units</button>
+        </div>
+        <div class="navline ${f._err?'err':''}">${esc(navTxt)}</div>
+      </div>
+      <textarea class="tx" data-id="${f.id}" data-k="tx" placeholder="${f.mode==='units'?'2023-04-15, 12.532&#10;2023-05-15, 11.804':'2023-04-15, 10000&#10;2023-05-15, 10000'}">${esc(f.tx||"")}</textarea>
+      <div class="manual-nav">Current NAV override:
+        <input value="${esc(f.manualNav||"")}" placeholder="auto" data-id="${f.id}" data-k="manualNav" inputmode="decimal"></div>
+      ${c.error?`<div class="navline err">${esc(c.error)}</div>`:""}
+      <div class="fund-fin">${finLine(c)}</div>`;
+    host.appendChild(card);});
+  const add=document.createElement("div");add.className="add-card";add.textContent="+ Add fund";add.onclick=addFund;host.appendChild(add);}
+function renderPortfolio(){const host=$("#portfolioHost");if(!host)return;
+  const comp=funds.map(f=>({f,c:computeFund(f)})).filter(x=>x.c.invested>0);
+  if(!comp.length){host.innerHTML=`<div class="empty"><h3>Add a fund and its transaction history</h3><p>Map a scheme code, then paste your buys as <code>date, amount</code>. Returns appear here.</p></div>`;return;}
+  let inv=0,val=0,red=0,valKnown=true;const allCf=[];
+  comp.forEach(({c})=>{inv+=c.invested;red+=c.redeemed;
+    if(c.value!=null){val+=c.value;c.rows.forEach(r=>allCf.push({date:r.date,amount:r.type==='sell'?r.amount:-r.amount}));}else valKnown=false;});
+  let pXirr=null;if(valKnown&&allCf.length){allCf.push({date:Date.now(),amount:val});const r=xirr(allCf);pXirr=r!=null?r*100:null;}
+  const gain=valKnown?val+red-inv:null,gp=valKnown&&inv>0?gain/inv*100:null;
+  host.innerHTML=`<div class="stat-row">
+    <div class="stat"><div class="k">Invested</div><div class="v">${inr(inv)}</div></div>
+    <div class="stat"><div class="k">Current value</div><div class="v accent">${valKnown?inr(val):"—"}</div></div>
+    <div class="stat"><div class="k">Gain</div><div class="v ${gain>=0?'pos':'neg'}">${gain!=null?(gain>=0?'+':'')+inr(gain):"—"}</div></div>
+    <div class="stat"><div class="k">Return</div><div class="v ${gp>=0?'pos':'neg'}">${gp!=null?(gp>=0?'+':'')+gp.toFixed(1)+'%':"—"}</div></div>
+    <div class="stat"><div class="k">XIRR</div><div class="v ${pXirr>=0?'pos':'neg'}">${pXirr!=null?(pXirr>=0?'+':'')+pXirr.toFixed(1)+'%':"—"}</div></div>
+  </div>
+  <table class="data"><thead><tr><th>Fund</th><th class="num">Invested</th><th class="num">Value</th><th class="num">Gain</th><th class="num">Return</th><th class="num">XIRR</th></tr></thead><tbody>
+  ${comp.map(({f,c})=>`<tr><td>${esc(f.name)}</td><td class="num">${inr(c.invested)}</td>
+    <td class="num">${c.value!=null?inr(c.value):"—"}</td>
+    <td class="num ${c.gain>=0?'pos':'neg'}">${c.gain!=null?(c.gain>=0?'+':'')+inr(c.gain):"—"}</td>
+    <td class="num ${c.gainPct>=0?'pos':'neg'}">${c.gainPct!=null?(c.gainPct>=0?'+':'')+c.gainPct.toFixed(1)+'%':"—"}</td>
+    <td class="num ${c.xirr>=0?'pos':'neg'}">${c.xirr!=null?(c.xirr>=0?'+':'')+c.xirr.toFixed(1)+'%':"—"}</td></tr>`).join("")}
+  </tbody><tfoot><tr><td>Total</td><td class="num">${inr(inv)}</td><td class="num">${valKnown?inr(val):"—"}</td>
+    <td class="num ${gain>=0?'pos':'neg'}">${gain!=null?(gain>=0?'+':'')+inr(gain):"—"}</td>
+    <td class="num ${gp>=0?'pos':'neg'}">${gp!=null?(gp>=0?'+':'')+gp.toFixed(1)+'%':"—"}</td>
+    <td class="num ${pXirr>=0?'pos':'neg'}">${pXirr!=null?(pXirr>=0?'+':'')+pXirr.toFixed(1)+'%':"—"}</td></tr></tfoot></table>`;}
+ 
+function render(){
+  $("#view-overlap").classList.toggle("hide",view!=="overlap");
+  $("#view-returns").classList.toggle("hide",view!=="returns");
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.v===view));
+  if(view==="overlap"){
+    renderOvFunds();const model=build();const has=model.parsed.some(f=>f.rows.length);
+    ["resultsSection","detailSection","topSection"].forEach(id=>$("#"+id).classList.toggle("hide",!has));
+    if(has){renderMatrix(model);fillSelectors(model);renderDetail(model);renderTop(model);renderWarn(model);}
+    else $("#warnSection").classList.add("hide");
+  }else{
+    renderRetFunds();renderPortfolio();
+    funds.forEach(f=>{if(f.code&&!f._hist&&!f._loading&&!f._err)fetchHistory(f);});
+  }
+  persist();}
+ 
+function addFund(){funds.push({id:uid++,name:"Fund "+(funds.length+1),text:"",code:"",tx:"",mode:"amt"});render();}
+function removeFund(id){funds=funds.filter(f=>f.id!=id);render();}
+ 
+document.addEventListener("input",e=>{const t=e.target,id=t.dataset&&t.dataset.id;if(!id)return;
+  const f=funds.find(x=>x.id==id);if(!f)return;const k=t.dataset.k;
+  if(k==="name")f.name=t.value;
+  if(k==="text"){f.text=t.value;clearTimeout(window.__t);window.__t=setTimeout(()=>{
+    const m=build(),has=m.parsed.some(x=>x.rows.length);
+    if(has){renderMatrix(m);fillSelectors(m);renderDetail(m);renderTop(m);renderWarn(m);}
+    const card=t.closest(".card");if(card){const rows=parseHoldings(f.text),sum=rows.reduce((s,r)=>s+r.weight,0);
+      const meta=card.querySelector(".meta");if(meta)meta.innerHTML=`<span>${rows.length} holding${rows.length===1?"":"s"}</span><span class="sum ${(rows.length&&(sum>115||sum<40))?"bad":""}">Σ ${sum.toFixed(1)}%</span>`;}
+    persist();},250);}
+  if(k==="code")f.code=t.value;
+  if(k==="manualNav"){f.manualNav=t.value;clearTimeout(window.__r);window.__r=setTimeout(()=>{renderRetFunds();renderPortfolio();persist();},300);}
+  if(k==="tx"){f.tx=t.value;clearTimeout(window.__r);window.__r=setTimeout(()=>{
+    const card=t.closest(".card");const c=computeFund(f);
+    if(card){const fin=card.querySelector(".fund-fin");if(fin)fin.innerHTML=finLine(c);}
+    renderPortfolio();persist();},300);}
+});
+document.addEventListener("click",e=>{
+  const del=e.target.closest("[data-k='del']");if(del){removeFund(del.dataset.id);return;}
+  const find=e.target.closest("[data-k='find']");if(find){const f=funds.find(x=>x.id==find.dataset.id);
+    const box=document.querySelector(`[data-drop="${f.id}"]`);box.classList.remove("hide");box.innerHTML=`<div>Searching…</div>`;
+    const q=prompt("Search scheme by name (e.g. 'parag parikh flexi cap direct growth'):",f.name||"");
+    if(q){searchScheme(f,q,box);}else box.classList.add("hide");return;}
+  const mode=e.target.closest("[data-k='mode']");if(mode){const f=funds.find(x=>x.id==mode.closest("[data-id]").dataset.id);
+    f.mode=mode.dataset.mode;renderRetFunds();renderPortfolio();persist();return;}
+});
+$("#addBtn").onclick=addFund;
+$("#clearBtn").onclick=()=>{if(confirm("Remove all funds and data?")){funds=[];uid=1;render();}};
+if($("#refreshBtn"))$("#refreshBtn").onclick=()=>{funds.forEach(f=>{f._hist=null;f._err=null;});refreshAll();};
+$("#metricSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;metric=b.dataset.m;
+  $("#metricSeg").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));renderMatrix(build());});
+$("#selA").onchange=()=>renderDetail(build());
+$("#selB").onchange=()=>renderDetail(build());
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{view=t.dataset.v;render();});
+ 
+$("#exportBtn").onclick=()=>{const slim=funds.map(f=>({id:f.id,name:f.name,text:f.text,code:f.code,tx:f.tx,mode:f.mode,manualNav:f.manualNav,isin:f.isin}));
+  const blob=new Blob([JSON.stringify({funds:slim,uid,view},null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="fund-data.json";a.click();URL.revokeObjectURL(a.href);};
+$("#importBtn").onclick=()=>$("#importFile").click();
+$("#importFile").onchange=e=>{const file=e.target.files[0];if(!file)return;const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result);if(Array.isArray(d.funds)){
+    funds=d.funds.map(f=>({mode:'amt',...f}));uid=d.uid||funds.length+1;render();}
+    else alert("That file doesn't look like exported fund data.");}catch(err){alert("Couldn't read that file.");}};
+  r.readAsText(file);e.target.value="";};
+ 
+$("#sampleBtn").onclick=()=>{
+  funds=[
+    {id:uid++,name:"Parag Parikh Flexi Cap",code:"122639",mode:"amt",
+     text:"HDFC Bank 7.9\nBajaj Holdings 6.2\nICICI Bank 5.4\nPower Grid 4.6\nCoal India 4.1\nITC 3.7\nReliance Industries 3.2\nKotak Mahindra Bank 2.9\nMaruti Suzuki 2.6\nInfosys 2.3",
+     tx:"2022-04-01, 15000\n2022-10-03, 15000\n2023-04-03, 15000\n2023-10-03, 15000\n2024-04-01, 20000"},
+    {id:uid++,name:"UTI Nifty 50 Index",code:"120716",mode:"amt",
+     text:"HDFC Bank 11.2\nICICI Bank 8.4\nReliance Industries 8.1\nInfosys 5.6\nTCS 4.0\nBharti Airtel 3.8\nLarsen & Toubro 3.6\nKotak Mahindra Bank 2.8\nAxis Bank 2.7\nState Bank of India 2.6",
+     tx:"2022-04-01, 10000\n2022-10-03, 10000\n2023-04-03, 10000\n2023-10-03, 10000\n2024-04-01, 10000"}
+  ];
+  view="returns";render();};
+ 
+/* ===================== FILE IMPORT (CSV / Excel) ===================== */
+function parseCSV(text){const rows=[];let row=[],cur="",q=false;
+  for(let i=0;i<text.length;i++){const ch=text[i];
+    if(q){if(ch==='"'){if(text[i+1]==='"'){cur+='"';i++;}else q=false;}else cur+=ch;}
+    else{if(ch==='"')q=true;else if(ch===','){row.push(cur);cur="";}
+      else if(ch==='\n'){row.push(cur);rows.push(row);row=[];cur="";}
+      else if(ch==='\r'){}else cur+=ch;}}
+  if(cur!==""||row.length){row.push(cur);rows.push(row);}
+  return rows.filter(r=>r.some(c=>String(c).trim()!==""));}
+function loadSheetJS(){return new Promise((res,rej)=>{if(window.XLSX)return res(window.XLSX);
+  const s=document.createElement("script");
+  s.src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+  s.onload=()=>res(window.XLSX);s.onerror=()=>rej(new Error("cdn"));document.head.appendChild(s);});}
+function num(v){const n=parseFloat(String(v==null?"":v).replace(/[^0-9.\-]/g,""));return isNaN(n)?null:n;}
+function pickHeader(rows){
+  for(let i=0;i<Math.min(rows.length,15);i++){const r=rows[i].map(x=>String(x).toLowerCase());
+    if(r.some(c=>/date/.test(c))&&r.some(c=>/amount|unit|qty|nav|scheme|fund|price|value/.test(c)))return i;}
+  for(let i=0;i<rows.length;i++)if(rows[i].filter(c=>String(c).trim()).length>=2)return i;return 0;}
+function guessMap(h){const f=re=>{for(let i=0;i<h.length;i++)if(re.test(h[i]))return i;return -1;};
+  return{date:f(/date/i),fund:f(/scheme|fund|security|instrument|particular|name/i),
+    type:f(/type|side|buy.?sell|trxn|order.?type|transaction.?type/i),
+    amount:f(/amount|amt|value|invest|consideration|net/i),
+    units:f(/unit|qty|quantity|allot/i),nav:f(/nav|price|rate/i),
+    code:f(/amfi|scheme.?code|^code$/i)};}
+ 
+/* ---- CAS (Consolidated Account Statement) PDF parsing ---- */
+const CAS_MON={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+function parseCasDate(s){const m=String(s).match(/^(\d{1,2})-([A-Za-z]{3})-(\d{4})$/);
+  if(!m)return NaN;const mo=CAS_MON[m[2].toLowerCase()];if(mo==null)return NaN;return Date.UTC(+m[3],mo,+m[1],12);}
+function casNum(s){if(s==null)return null;s=String(s);const neg=/^\(|^-/.test(s.trim());
+  const n=parseFloat(s.replace(/[(),\-\s]/g,""));return isNaN(n)?null:(neg?-n:n);}
+function casType(desc){const d=desc.toLowerCase();
+  if(/redemption|redeem|switch\s*out|swp/.test(d))return 'sell';
+  if(/purchase|sip|systematic|switch\s*in|investment|reinvest/.test(d))return 'buy';return null;}
+function casCleanName(line){let n=line.split(/ISIN/i)[0];
+  n=n.replace(/\(Advisor[^)]*\)/ig,"").replace(/Registrar\s*:.*/i,"");
+  n=n.replace(/^[A-Z0-9]{2,8}-/,"").replace(/\s{2,}/g," ").trim();return n;}
+const CAS_TXRE=/^(\d{1,2}-[A-Za-z]{3}-\d{4})\s+(.+?)\s+(-?\(?[\d,]+\.\d{2}\)?)\s+(-?\(?[\d,]+\.\d{2,4}\)?)\s+([\d,]+\.\d{2,4})\s+(-?\(?[\d,]+\.\d{2,4}\)?)$/;
+const CAS_ISIN=/\b(INF[0-9A-Z]{9})\b/, CAS_FOLIO=/Folio\s*No\.?\s*:?\s*([0-9][0-9\/\s]*)/i;
+function parseCasLines(lines){const schemes=[],byKey={};let cur=null,prev="";
+  lines.forEach(raw=>{const line=String(raw).replace(/\s+/g," ").trim();if(!line)return;
+    const isinM=line.match(CAS_ISIN),txM=line.match(CAS_TXRE);
+    if(isinM&&!txM){const isin=isinM[1];let name=casCleanName(line);
+      if(name.replace(/[^A-Za-z]/g,"").length<4)name=casCleanName(prev)||prev;
+      const fol=((line.match(CAS_FOLIO)||[])[1]||"").trim();const key=isin+"|"+fol;
+      if(byKey[key])cur=byKey[key];else{cur={name,isin,folio:fol,txs:[]};byKey[key]=cur;schemes.push(cur);}
+      prev=line;return;}
+    const folM=line.match(CAS_FOLIO);if(folM&&cur&&!cur.folio)cur.folio=folM[1].trim();
+    if(txM){const date=parseCasDate(txM[1]);if(!isNaN(date)){
+      let type=casType(txM[2]);const amt=casNum(txM[3]),units=casNum(txM[4]),nav=casNum(txM[5]);
+      if(type==null)type=(units<0)?'sell':'buy';
+      if(cur&&amt!=null&&nav)cur.txs.push({date,type,amount:Math.abs(amt),nav});}}
+    prev=line;});
+  return schemes.filter(s=>s.txs.length);}
+function loadPdfJs(){return new Promise((res,rej)=>{
+  const set=()=>{try{window.pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";}catch(e){}};
+  if(window.pdfjsLib){set();return res(window.pdfjsLib);}
+  const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+  s.onload=()=>{set();res(window.pdfjsLib);};s.onerror=()=>rej(new Error("cdn"));document.head.appendChild(s);});}
+async function parseCAS(file,password){const pdfjs=await loadPdfJs();const buf=await file.arrayBuffer();
+  const pdf=await pdfjs.getDocument({data:new Uint8Array(buf),password:password||""}).promise;
+  const lines=[];
+  for(let p=1;p<=pdf.numPages;p++){const page=await pdf.getPage(p);const tc=await page.getTextContent();
+    const byY={};tc.items.forEach(it=>{const y=Math.round(it.transform[5]);(byY[y]=byY[y]||[]).push(it);});
+    Object.keys(byY).map(Number).sort((a,b)=>b-a).forEach(y=>{
+      const row=byY[y].sort((a,b)=>a.transform[4]-b.transform[4]).map(i=>i.str).join(" ");
+      const t=row.replace(/\s+/g," ").trim();if(t)lines.push(t);});}
+  return parseCasLines(lines);}
+ 
+let imp={headers:[],rows:[],map:{},kind:"table",cas:null,file:null};
+function openImport(){$("#importModal").classList.remove("hide");
+  $("#importStep1").classList.remove("hide");$("#importStep2").classList.add("hide");
+  $("#importStep3").classList.add("hide");$("#importConfirm").classList.add("hide");
+  $("#txFile").value="";$("#casPreview").innerHTML="";$("#casStatus").textContent="";imp.kind="table";imp.cas=null;}
+function closeImport(){$("#importModal").classList.add("hide");}
+function setParsed(rows){
+  if(!rows||!rows.length){alert("That file looks empty.");return;}
+  const hi=pickHeader(rows);imp.headers=rows[hi].map(x=>String(x).trim());
+  imp.rows=rows.slice(hi+1).filter(r=>r.some(c=>String(c).trim()!==""));
+  imp.map=guessMap(imp.headers);renderMapping();
+  $("#importStep2").classList.remove("hide");$("#importConfirm").classList.remove("hide");}
+function readImportFile(file){const ext=(file.name.split(".").pop()||"").toLowerCase();imp.file=file;
+  if(ext==="pdf"){imp.kind="cas";$("#importStep1").classList.add("hide");$("#importStep3").classList.remove("hide");
+    $("#importConfirm").classList.add("hide");setTimeout(()=>{const e=$("#casPwd");if(e)e.focus();},60);return;}
+  imp.kind="table";
+  if(ext==="csv"||ext==="txt"){file.text().then(t=>setParsed(parseCSV(t)));}
+  else{loadSheetJS().then(XLSX=>file.arrayBuffer().then(buf=>{
+      const wb=XLSX.read(new Uint8Array(buf),{type:"array"});const ws=wb.Sheets[wb.SheetNames[0]];
+      setParsed(XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:""}));}))
+    .catch(()=>alert("Couldn't load the Excel reader (needs internet). In Excel/Sheets do File → Save As → CSV, then import that."));}}
+async function readCAS(){const file=imp.file;if(!file)return;
+  const st=$("#casStatus");st.classList.remove("err");st.textContent="Reading…";
+  try{const schemes=await parseCAS(file,$("#casPwd").value);
+    if(!schemes.length){st.classList.add("err");st.textContent="No transactions found — make sure it's the Detailed CAS, not the Summary.";return;}
+    imp.cas=schemes;renderCasPreview(schemes);st.textContent="";$("#importConfirm").classList.remove("hide");
+  }catch(e){st.classList.add("err");
+    st.textContent=(e&&e.name==="PasswordException")?"Wrong password — try again.":"Couldn't read this PDF ("+(e&&e.message||e)+").";}}
+function renderCasPreview(schemes){let tot=0;
+  const rows=schemes.map(s=>{const inv=s.txs.filter(t=>t.type==='buy').reduce((a,t)=>a+t.amount,0);
+    const red=s.txs.filter(t=>t.type==='sell').reduce((a,t)=>a+t.amount,0);tot+=s.txs.length;
+    const ds=s.txs.map(t=>t.date).sort((a,b)=>a-b);
+    const per=ds.length?`${new Date(ds[0]).toISOString().slice(0,10)} → ${new Date(ds[ds.length-1]).toISOString().slice(0,10)}`:"";
+    return `<tr><td>${esc(s.name)}</td><td class="num">${s.txs.length}</td><td class="num">${inr(inv)}</td><td class="num">${red?inr(red):"—"}</td><td>${per}</td></tr>`;}).join("");
+  $("#casPreview").innerHTML=`<p class="muted">Found <b>${schemes.length}</b> scheme(s), <b>${tot}</b> transactions. Check this looks right, then import.</p>
+    <div class="preview"><table><thead><tr><th>Scheme</th><th class="num">Txns</th><th class="num">Invested</th><th class="num">Redeemed</th><th>Period</th></tr></thead><tbody>${rows}</tbody></table></div>`;}
+function importCAS(){const schemes=imp.cas||[];let added=0,merged=0;const fresh=[];
+  schemes.forEach(s=>{const lines=s.txs.map(t=>`${new Date(t.date).toISOString().slice(0,10)}, ${t.type}, ${t.amount}, ${t.nav}`);
+    let f=funds.find(x=>normalize(x.name||"")===normalize(s.name));
+    if(!f){f={id:uid++,name:s.name,text:"",code:"",isin:s.isin,tx:"",mode:"amt"};funds.push(f);added++;fresh.push(f);}
+    else merged++;
+    f.mode="amt";if(s.isin)f.isin=s.isin;f.tx=(f.tx?f.tx+"\n":"")+lines.join("\n");});
+  closeImport();view="returns";render();
+  fresh.forEach(f=>{if(!f.code)autoCode(f);});
+  setTimeout(()=>alert(`Imported ${schemes.length} scheme(s) — ${added} new, ${merged} updated. Matching each to live NAVs…`),50);}
+async function autoCode(f){try{const r=await fetch("https://api.mfapi.in/mf/search?q="+encodeURIComponent(f.name));
+  const j=await r.json();if(!j||!j.length)return;
+  let best=null,bs=0;j.slice(0,20).forEach(o=>{const sc=dice(normalize(o.schemeName),normalize(f.name));if(sc>bs){bs=sc;best=o;}});
+  if(best&&bs>=0.55){f.code=String(best.schemeCode);if(view==="returns")renderRetFunds();fetchHistory(f);}
+}catch(e){}}
+function doImport(){if(imp.kind==="cas")return importCAS();
+  const M=imp.map;const roles=[["date","Date","*"],["fund","Fund name","*"],["type","Buy / Sell",""],
+    ["amount","Amount ₹",""],["units","Units",""],["nav","NAV",""],["code","Scheme code",""]];
+  const opt=sel=>`<option value="-1">— none —</option>`+imp.headers.map((h,i)=>`<option value="${i}" ${i===sel?"selected":""}>${esc(h)}</option>`).join("");
+  $("#mapGrid").innerHTML=roles.map(([k,lab,req])=>
+    `<div><label>${lab}${req?" <b>*</b>":""}</label><select data-role="${k}">${opt(imp.map[k])}</select></div>`).join("");
+  $("#mapGrid").querySelectorAll("select").forEach(s=>s.onchange=()=>{imp.map[s.dataset.role]=+s.value;});
+  const pv=imp.rows.slice(0,5);
+  $("#mapPreview").innerHTML=`<table><thead><tr>${imp.headers.map(h=>`<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>`+
+    pv.map(r=>`<tr>${imp.headers.map((_,i)=>`<td>${esc(r[i]!=null?r[i]:"")}</td>`).join("")}</tr>`).join("")+`</tbody></table>`;}
+function doImport(){const M=imp.map;
+  if(M.date<0||M.fund<0||(M.amount<0&&M.units<0)){alert("Please map Date, Fund name, and Amount or Units.");return;}
+  const useUnits=M.amount<0&&M.units>=0;const groups={};
+  imp.rows.forEach(r=>{const dms=parseDate(String(r[M.date]).trim());if(isNaN(dms))return;
+    let v=num(useUnits?r[M.units]:r[M.amount]);if(v==null)return;
+    let type='buy';if(M.type>=0)type=normType(r[M.type]);if(v<0)type='sell';v=Math.abs(v);
+    const nav=M.nav>=0?num(r[M.nav]):null;
+    const fundName=(String(r[M.fund]).trim())||"Imported fund";
+    const code=M.code>=0?String(r[M.code]).replace(/[^0-9]/g,""):"";
+    const key=normalize(fundName)||fundName.toLowerCase();
+    if(!groups[key])groups[key]={name:fundName,code:code,lines:[]};
+    if(code&&!groups[key].code)groups[key].code=code;
+    const iso=new Date(dms).toISOString().slice(0,10);
+    groups[key].lines.push(`${iso}, ${type}, ${v}${nav!=null?", "+nav:""}`);});
+  let added=0,merged=0;
+  Object.values(groups).forEach(g=>{let f=funds.find(x=>normalize(x.name||"")===normalize(g.name));
+    if(!f){f={id:uid++,name:g.name,text:"",code:g.code||"",tx:"",mode:useUnits?'units':'amt'};funds.push(f);added++;}
+    else merged++;
+    if(g.code&&!f.code)f.code=g.code;f.mode=useUnits?'units':'amt';
+    f.tx=(f.tx?f.tx+"\n":"")+g.lines.join("\n");});
+  closeImport();view="returns";render();
+  setTimeout(()=>alert(`Imported ${Object.keys(groups).length} fund(s) — ${added} new, ${merged} updated. NAVs are loading; check the Returns tab.`),50);}
+ 
+$("#importTxBtn").onclick=openImport;
+$("#importCancel").onclick=closeImport;
+$("#importConfirm").onclick=doImport;
+$("#casRead").onclick=readCAS;
+$("#casPwd").addEventListener("keydown",e=>{if(e.key==="Enter")readCAS();});
+$("#dropzone").onclick=()=>$("#txFile").click();
+$("#txFile").onchange=e=>{const file=e.target.files[0];if(file)readImportFile(file);e.target.value="";};
+$("#importModal").addEventListener("click",e=>{if(e.target.id==="importModal")closeImport();});
+const dz=$("#dropzone");
+["dragover","dragenter"].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add("drag");}));
+["dragleave","drop"].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove("drag");}));
+dz.addEventListener("drop",e=>{const file=e.dataTransfer.files[0];if(file)readImportFile(file);});
+ 
+seed();
+if(!funds.length){funds=[{id:uid++,name:"Fund 1",text:"",code:"",tx:"",mode:"amt"},{id:uid++,name:"Fund 2",text:"",code:"",tx:"",mode:"amt"}];}
+render();
+</script>
+</body>
+</html>
